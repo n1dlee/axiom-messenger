@@ -1,0 +1,167 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.panel {
+  width: 340px;
+  height: 100vh;
+  background: var(--bg-depth-1, #0d0d1a);
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  pointer-events: all;
+  animation: slideInRight 0.2s ease;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(30px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: var(--accent-400);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  transition: background 0.1s;
+}
+
+.backBtn:hover { background: var(--glass-bg-hover); }
+
+/* Avatar section */
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-500), var(--accent-300));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.avatarInitials {
+  font-size: 36px;
+  font-weight: var(--fw-bold);
+  color: white;
+}
+
+.name {
+  font-size: var(--text-xl, 20px);
+  font-weight: var(--fw-semi);
+  color: var(--text-primary);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-1) 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.premiumBadge { color: gold; font-size: 14px; }
+.verifiedBadge {
+  background: var(--accent-500);
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.botBadge {
+  font-size: 10px;
+  background: var(--glass-bg-active);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  color: var(--text-muted);
+}
+
+.online { font-size: var(--text-sm); color: var(--online); }
+.lastSeen { font-size: var(--text-sm); color: var(--text-muted); }
+
+/* Info fields */
+.infoFields {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.infoField {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--glass-bg-active);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.infoIcon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+
+.infoValue {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.infoLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Actions */
+.actions {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.actionBtn {
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-active);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.actionBtn:hover { background: var(--glass-bg-hover); }
+.blockBtn { color: var(--danger, #ff4d4d); }
+.unblockBtn { color: var(--online); }

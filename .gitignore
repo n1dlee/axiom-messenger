@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Rust / Cargo build output
+src-tauri/target/
+
+# TDLib binary — not committed (see README for setup instructions)
+src-tauri/tdlib/*.dll
+src-tauri/tdlib/*.so
+src-tauri/tdlib/*.dylib
+
+# Tauri local DB / session data
+*.db
+*.sqlite
+td_data/
+
+# Environment / secrets (never commit these)
+.env
+.env.*
+!.env.example
+
+# Claude Code project files
+.claude/

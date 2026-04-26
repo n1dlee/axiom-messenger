@@ -1,0 +1,226 @@
+import { useState, useRef, useEffect, type KeyboardEvent, type FormEvent, type ChangeEvent } from 'react';
+import type { Message } from '../../store/types';
+import { ReplyPreview } from './ReplyPreview';
+import { AttachmentMenu } from './AttachmentMenu';
+import { VideoNoteRecorder } from './VideoNoteRecorder';
+import styles from './MessageInput.module.css';
+
+interface Props {
+  onSend: (text: string) => void;
+  onTyping?: () => void;
+  disabled?: boolean;
+  replyTo?: Message | null;
+  onCancelReply?: () => void;
+  editMessage?: Message | null;
+  onCancelEdit?: () => void;
+  onSendPhoto?: (path: string) => void;
+  onSendVideo?: (path: string) => void;
+  onSendDocument?: (path: string) => void;
+  onSendVideoNote?: (blob: Blob, duration: number) => void;
+}
+
+export function MessageInput({
+  onSend, onTyping, disabled,
+  replyTo, onCancelReply,
+  editMessage, onCancelEdit,
+  onSendPhoto, onSendVideo, onSendDocument, onSendVideoNote,
+}: Props) {
+  const [text, setText] = useState('');
+  const [showAttach, setShowAttach] = useState(false);
+  const [showVideoNote, setShowVideoNote] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attachWrapRef = useRef<HTMLDivElement>(null);
+
+  // Pre-fill text when entering edit mode
+  useEffect(() => {
+    if (editMessage) {
+      setText(editMessage.text);
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    }
+  }, [editMessage?.id]);
+
+  function autoResize() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+
+  function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || disabled) return;
+    onSend(trimmed);
+    setText('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === 'Escape') {
+      if (editMessage) onCancelEdit?.();
+      if (replyTo) onCancelReply?.();
+    }
+  }
+
+  function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
+    setText(e.target.value);
+    autoResize();
+    // Send typing action (debounced every 3s)
+    if (onTyping && e.target.value.length > 0) {
+      if (!typingTimeoutRef.current) {
+        onTyping();
+        typingTimeoutRef.current = setTimeout(() => {
+          typingTimeoutRef.current = null;
+        }, 3000);
+      }
+    }
+  }
+
+  const isEditing = Boolean(editMessage);
+  const placeholder = isEditing ? 'Редактировать сообщение…' : 'Написать сообщение…';
+
+  return (
+    <div className={styles.container}>
+      {/* Reply preview bar */}
+      {replyTo && !isEditing && (
+        <ReplyPreview replyTo={replyTo} onCancel={onCancelReply} />
+      )}
+
+      {/* Edit mode bar */}
+      {isEditing && (
+        <div className={styles.editBar}>
+          <span className={styles.editIcon}>✏️</span>
+          <div className={styles.editInfo}>
+            <span className={styles.editLabel}>Редактирование</span>
+            <span className={styles.editOriginal}>
+              {editMessage?.text.slice(0, 60) ?? ''}
+            </span>
+          </div>
+          <button className={styles.cancelBtn} onClick={onCancelEdit} aria-label="Отменить редактирование">
+            ✕
+          </button>
+        </div>
+      )}
+
+      <form className={styles.root} onSubmit={handleSubmit}>
+        <div className={styles.inner}>
+          {/* Attach button */}
+          <div ref={attachWrapRef} className={styles.attachWrap}>
+            <button
+              type="button"
+              className={[styles.iconBtn, showAttach ? styles.iconBtnActive : ''].join(' ').trim()}
+              aria-label="Прикрепить файл"
+              disabled={disabled}
+              onClick={() => setShowAttach(v => !v)}
+            >
+              <AttachIcon />
+            </button>
+            {showAttach && (
+              <AttachmentMenu
+                onSendPhoto={path => { onSendPhoto?.(path); setShowAttach(false); }}
+                onSendVideo={path => { onSendVideo?.(path); setShowAttach(false); }}
+                onSendDocument={path => { onSendDocument?.(path); setShowAttach(false); }}
+                onClose={() => setShowAttach(false)}
+              />
+            )}
+          </div>
+
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            placeholder={placeholder}
+            value={text}
+            rows={1}
+            disabled={disabled}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            aria-label="Поле ввода сообщения"
+          />
+
+          {/* Video note button (visible only when text is empty) */}
+          {!text.trim() && !isEditing && onSendVideoNote && (
+            <button
+              type="button"
+              className={styles.iconBtn}
+              aria-label="Записать видеосообщение"
+              disabled={disabled}
+              onClick={() => setShowVideoNote(true)}
+              title="Видеосообщение (кружочек)"
+            >
+              <VideoNoteIcon />
+            </button>
+          )}
+
+          <button
+            type="submit"
+            className={[styles.sendBtn, text.trim() ? styles.active : ''].join(' ').trim()}
+            disabled={!text.trim() || disabled}
+            aria-label={isEditing ? 'Сохранить изменения' : 'Отправить'}
+          >
+            {isEditing ? <CheckIcon /> : <SendIcon />}
+          </button>
+        </div>
+      </form>
+
+      {/* Video note recorder modal */}
+      {showVideoNote && (
+        <VideoNoteRecorder
+          onSend={(blob, duration) => {
+            onSendVideoNote?.(blob, duration);
+            setShowVideoNote(false);
+          }}
+          onCancel={() => setShowVideoNote(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function VideoNoteIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="10 8 16 12 10 16 10 8"/>
+    </svg>
+  );
+}
+
+function AttachIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}

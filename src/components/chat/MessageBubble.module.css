@@ -1,0 +1,247 @@
+.wrap {
+  display: flex;
+  padding: 2px var(--space-4);
+}
+
+.in  { justify-content: flex-start; }
+.out { justify-content: flex-end; }
+
+/* ── Bubble ── */
+.bubble {
+  max-width: 68%;
+  min-width: 80px;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  transition: opacity var(--t-base);
+}
+
+.in .bubble {
+  background: var(--bubble-in-bg);
+  border: 1px solid var(--bubble-in-border);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.out .bubble {
+  background: var(--bubble-out-bg);
+  border: 1px solid var(--bubble-out-border);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+/* ── Deleted state ── */
+.deleted .bubble {
+  background: var(--bubble-deleted-bg);
+  border-color: var(--bubble-deleted-border);
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+/* ── Ghost badge ── */
+.ghostBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-style: italic;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ── Sender name ── */
+.sender {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semi);
+  color: var(--accent-400);
+  margin-bottom: 2px;
+}
+
+/* ── Text ── */
+.text {
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+  color: var(--text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.textDeleted {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Meta row (time + checkmarks) ── */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.time {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* ── Edited badge ── */
+.editedBadge {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  align-self: flex-end;
+  margin-top: -2px;
+}
+
+/* ── Media placeholders (Фаза 0 stub, replaced in Фаза 3) ── */
+.mediaPlaceholder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  min-width: 160px;
+}
+
+.mediaIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.mediaLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.caption {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  margin-top: var(--space-1);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* ── Voice placeholder ── */
+.voicePlaceholder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  min-width: 200px;
+}
+
+.voiceWave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  height: 30px;
+}
+
+.voiceBar {
+  width: 3px;
+  background: var(--accent-400);
+  border-radius: 2px;
+  opacity: 0.6;
+  min-height: 4px;
+}
+
+.voiceDuration {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Document placeholder ── */
+.documentPlaceholder {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  min-width: 180px;
+}
+
+.documentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.documentName {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.documentSize {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ── Sticker placeholder ── */
+.stickerWrap {
+  /* No background bubble for stickers */
+}
+
+.stickerBubble {
+  background: transparent !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+.stickerPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+}
+
+.stickerEmoji {
+  font-size: 56px;
+  line-height: 1;
+}
+
+/* ── Video note (circle) placeholder ── */
+.videoNotePlaceholder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+.videoNoteIcon {
+  font-size: 40px;
+}
+
+/* ── Date separator ── */
+.dateSep {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) 0 var(--space-2);
+}
+
+.dateSep span {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: var(--glass-bg-active);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  padding: 3px var(--space-3);
+}

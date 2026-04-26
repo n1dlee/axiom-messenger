@@ -1,0 +1,112 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 600;
+  display: flex;
+  align-items: stretch;
+  backdrop-filter: blur(4px);
+}
+
+.panel {
+  display: flex;
+  width: 720px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--bg-depth-1, #0d0d1a);
+  border-right: 1px solid var(--glass-border);
+  animation: slideIn 0.2s ease;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-30px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* Left navigation */
+.nav {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) 0;
+  background: var(--bg-depth-2, #121220);
+  overflow-y: auto;
+}
+
+.navHeader {
+  padding: 0 var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: var(--space-2);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: var(--accent-400);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  margin-bottom: var(--space-2);
+}
+
+.backBtn:hover { color: var(--accent-300); }
+
+.navTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--fw-semi);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 10px var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s;
+  border-radius: 0;
+}
+
+.navItem:hover { background: var(--glass-bg-hover); color: var(--text-primary); }
+.navItemActive { background: var(--glass-bg-active) !important; color: var(--accent-400) !important; }
+
+.navIcon { font-size: 16px; width: 20px; text-align: center; }
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 10px var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--danger, #ff4d4d);
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s;
+  margin-top: auto;
+  border-top: 1px solid var(--glass-border);
+}
+
+.logoutBtn:hover { background: rgba(255,77,77,0.08); }
+
+/* Content area */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+}

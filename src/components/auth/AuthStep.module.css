@@ -1,0 +1,114 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  animation: fadeUp 0.25s var(--ease-out) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.heading {
+  font-size: var(--text-lg);
+  font-weight: var(--fw-semi);
+  color: var(--text-primary);
+  line-height: var(--lh-tight);
+}
+
+.hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--lh-base);
+  margin-top: calc(-1 * var(--space-3));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-4);
+  background: var(--glass-bg-active);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  outline: none;
+  transition:
+    border-color var(--t-base) var(--ease-out),
+    background var(--t-base) var(--ease-out),
+    box-shadow var(--t-base) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  border-color: var(--glass-border-focus);
+  background: rgba(123,104,255,0.06);
+  box-shadow: 0 0 0 3px rgba(123,104,255,0.12);
+}
+
+/* Code input — larger centered font */
+.codeInput {
+  font-size: var(--text-xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: 6px;
+  text-align: center;
+}
+
+/* Password with show/hide toggle */
+.passwordWrap {
+  position: relative;
+}
+.passwordWrap .input {
+  padding-right: 46px;
+}
+.showToggle {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--t-fast) var(--ease-out);
+}
+.showToggle:hover {
+  color: var(--text-secondary);
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-dim);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(248,113,113,0.3);
+}
+
+.submit {
+  width: 100%;
+  margin-top: var(--space-2);
+}

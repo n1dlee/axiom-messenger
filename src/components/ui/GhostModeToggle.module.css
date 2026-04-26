@@ -1,0 +1,38 @@
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-xs);
+  -webkit-backdrop-filter: var(--blur-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background var(--t-base) var(--ease-out),
+    color var(--t-base) var(--ease-out),
+    border-color var(--t-base) var(--ease-out),
+    box-shadow var(--t-base) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.btn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  color: var(--text-secondary);
+}
+
+.btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-500);
+  color: var(--accent-400);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.btn.active:hover {
+  background: rgba(123, 104, 255, 0.22);
+  box-shadow: 0 0 18px var(--accent-glow);
+}

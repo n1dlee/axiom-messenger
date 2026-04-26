@@ -1,0 +1,143 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  height: var(--header-h);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  flex-shrink: 0;
+}
+
+.avatarBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chatInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chatNameBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: var(--fw-semi);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  transition: color 0.15s;
+}
+.chatNameBtn:hover { color: var(--accent-400); }
+
+/* Legacy .chatName for backward compat */
+.chatName {
+  font-size: var(--text-base);
+  font-weight: var(--fw-semi);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header action button */
+.headerBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.headerBtn:hover { color: var(--text-primary); background: var(--glass-bg-hover); }
+
+.chatStatus {
+  font-size: var(--text-xs);
+  color: var(--online);
+  line-height: 1;
+}
+
+/* Ghost mode pill */
+.ghostPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
+  color: var(--accent-400);
+  background: var(--accent-dim);
+  border: 1px solid rgba(123,104,255,0.3);
+  border-radius: var(--radius-full);
+  padding: 3px var(--space-3);
+  white-space: nowrap;
+}
+
+/* Pinned badge */
+.pinnedBadge {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Messages area ── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingMsgs {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-8) 0;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ── Empty state ── */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
