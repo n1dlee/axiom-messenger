@@ -605,3 +605,11 @@ pub fn search_messages(query: &str, from_message_id: i64, limit: i32) -> Value {
         "filter": { "@type": "searchMessagesFilterEmpty" }
     })
 }
+pub fn set_poll_answer(chat_id: i64, message_id: i64, option_ids: &[i32]) -> serde_json::Value {
+    serde_json::json!({
+        "@type": "setPollAnswer",
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "option_ids": option_ids
+    })
+}

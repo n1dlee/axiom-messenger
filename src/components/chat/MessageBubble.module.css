@@ -379,3 +379,16 @@
   border-radius: var(--radius-full);
   padding: 3px var(--space-3);
 }
+
+.failedMark {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b6b;
+  line-height: 1;
+}
+
+.pendingMark {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1;
+}

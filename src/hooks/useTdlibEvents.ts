@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { useApp } from '../store/AppContext';
-import type { AuthStep, Chat, Message, MediaType } from '../store/types';
+import type { AuthStep, Chat, Message, MediaType, Poll } from '../store/types';
 
 // ── Parsers ────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,18 @@ export function parseChat(raw: any): Chat {
     (p: any) => p.chat_list?.['@type'] === 'chatListMain'
   );
 
+  // Chat photo — use local path if already downloaded, else store fileId for lazy download
+  let photoUrl: string | undefined;
+  let photoFileId: number | undefined;
+  const smallPhoto = raw.photo?.small;
+  if (smallPhoto) {
+    if (smallPhoto.local?.is_downloading_complete && smallPhoto.local?.path) {
+      photoUrl = convertFileSrc(smallPhoto.local.path as string);
+    } else if (smallPhoto.id) {
+      photoFileId = smallPhoto.id;
+    }
+  }
+
   return {
     id: raw.id,
     title: raw.title ?? 'Unknown',
@@ -39,7 +51,8 @@ export function parseChat(raw: any): Chat {
       ?? getMediaLabel(raw.last_message?.content?.['@type']),
     lastMessageDate: raw.last_message?.date,
     unreadCount: raw.unread_count ?? 0,
-    photoUrl: undefined,
+    photoUrl,
+    photoFileId,
     isOnline: false,
     isMuted: (raw.notification_settings?.mute_for ?? 0) > 0,
     // TDLib order — higher value = displayed first in list
@@ -68,6 +81,16 @@ function getMediaLabel(type?: string): string {
   return labels[type] ?? '';
 }
 
+function parseEntities(formattedText: any): import('../store/types').TextEntity[] | undefined {
+  if (!formattedText?.entities?.length) return undefined;
+  return formattedText.entities.map((e: any) => ({
+    offset: e.offset ?? 0,
+    length: e.length ?? 0,
+    type: e.type?.['@type'] ?? '',
+    url: e.type?.url,
+  }));
+}
+
 export function parseMessage(raw: any, chatId: number): Message {
   const c = raw.content ?? {};
   const contentType: string = c['@type'] ?? 'messageText';
@@ -79,10 +102,13 @@ export function parseMessage(raw: any, chatId: number): Message {
   let fileName: string | undefined;
   let fileSize: number | undefined;
   let caption: string | undefined;
+  let entities: import('../store/types').TextEntity[] | undefined;
+  let poll: Poll | undefined;
 
   switch (contentType) {
     case 'messageText':
       text = c.text?.text ?? '';
+      entities = parseEntities(c.text);
       break;
 
     case 'messagePhoto':
@@ -151,9 +177,31 @@ export function parseMessage(raw: any, chatId: number): Message {
       duration = c.animation?.duration;
       break;
 
-    case 'messagePoll':
-      text = `📊 ${c.poll?.question?.text ?? c.poll?.question ?? 'Опрос'}`;
+    case 'messagePoll': {
+      const p = c.poll;
+      text = `📊 ${p?.question?.text ?? p?.question ?? 'Опрос'}`;
+      mediaType = 'poll';
+      if (p) {
+        poll = {
+          id: String(p.id ?? raw.id),
+          question: p.question?.text ?? p.question ?? '',
+          options: (p.options ?? []).map((o: any) => ({
+            text: o.text?.text ?? o.text ?? '',
+            voterCount: o.voter_count ?? 0,
+            isChosen: o.is_chosen ?? false,
+          })),
+          totalVoterCount: p.total_voter_count ?? 0,
+          isClosed: p.is_closed ?? false,
+          isAnonymous: p.is_anonymous ?? true,
+          isQuiz: p.type?.['@type'] === 'pollTypeQuiz',
+          correctOptionId: p.type?.correct_option_id,
+          userSelectedOptions: (p.options ?? [])
+            .map((o: any, i: number) => o.is_chosen ? i : -1)
+            .filter((i: number) => i >= 0),
+        };
+      }
       break;
+    }
 
     case 'messageCall':
       text = `📞 ${c.is_video ? 'Видеозвонок' : 'Звонок'}`;
@@ -215,11 +263,10 @@ export function parseMessage(raw: any, chatId: number): Message {
   let senderName: string | undefined;
   if (!raw.is_outgoing && raw.sender_id) {
     if (raw.sender_id['@type'] === 'messageSenderUser') {
-      // Will be resolved from user cache; leave as undefined for now
-      senderName = undefined;
-    } else if (raw.sender_id['@type'] === 'messageSenderChat') {
-      senderName = undefined; // channel sender
+      const uid: number = raw.sender_id.user_id;
+      senderName = userNameCache.get(uid);
     }
+    // channel sender — leave undefined
   }
 
   return {
@@ -232,6 +279,8 @@ export function parseMessage(raw: any, chatId: number): Message {
     duration,
     fileName,
     fileSize,
+    entities,
+    poll,
     date: raw.date,
     isOutgoing: raw.is_outgoing,
     isDeleted: false,
@@ -241,6 +290,9 @@ export function parseMessage(raw: any, chatId: number): Message {
     editDate: raw.edit_date || undefined,
   };
 }
+
+// ── Module-level user name cache (avoids re-render overhead) ──────────────
+export const userNameCache = new Map<number, string>();
 
 // ── Hook — call ONCE at the app root ──────────────────────────────────────
 
@@ -357,6 +409,10 @@ export function useTdlibEvents() {
         listen<any>('td:new_message', ({ payload }) => {
           const msg = parseMessage(payload.message, payload.message.chat_id);
           dispatch({ type: 'APPEND_MESSAGE', chatId: msg.chatId, message: msg });
+          // Proactively fetch sender info if not cached
+          if (msg.senderId && !userNameCache.has(msg.senderId)) {
+            invoke('get_user', { userId: msg.senderId }).catch(() => {});
+          }
         }),
 
         // Message content edited
@@ -402,11 +458,76 @@ export function useTdlibEvents() {
         listen<any>('td:file', ({ payload }) => {
           const file = payload.file ?? payload;
           if (file?.local?.is_downloading_complete && file.local.path) {
+            const localPath = file.local.path as string;
+            dispatch({ type: 'UPDATE_MESSAGE_FILE', fileId: file.id, localPath });
+            // Also update chat avatars that were waiting on this file
             dispatch({
-              type: 'UPDATE_MESSAGE_FILE',
+              type: 'UPDATE_CHAT_PHOTO',
               fileId: file.id,
-              localPath: file.local.path as string,
+              photoUrl: convertFileSrc(localPath),
             });
+          }
+        }),
+
+        // Message send success — replace temp id with real id
+        listen<any>('td:message_sent', ({ payload }) => {
+          if (payload.old_message_id && payload.message) {
+            const msg = parseMessage(payload.message, payload.message.chat_id);
+            dispatch({
+              type: 'UPDATE_MESSAGE',
+              chatId: msg.chatId,
+              message: { ...msg, id: msg.id },
+            });
+          }
+        }),
+
+        // Message send failure
+        listen<any>('td:message_failed', ({ payload }) => {
+          if (payload.old_message_id && payload.chat_id) {
+            dispatch({
+              type: 'UPDATE_MESSAGE',
+              chatId: payload.chat_id,
+              message: { id: payload.old_message_id, sendState: 'failed' },
+            });
+          }
+        }),
+
+        // Chat photo updated at runtime
+        listen<any>('td:chat_photo_updated', ({ payload }) => {
+          const smallPhoto = payload.photo?.small;
+          if (!smallPhoto || !payload.chat_id) return;
+          if (smallPhoto.local?.is_downloading_complete && smallPhoto.local?.path) {
+            dispatch({
+              type: 'UPSERT_CHAT',
+              chat: { id: payload.chat_id, photoUrl: convertFileSrc(smallPhoto.local.path) } as any,
+            });
+          } else if (smallPhoto.id) {
+            // Store fileId so download pipeline picks it up
+            dispatch({
+              type: 'UPSERT_CHAT',
+              chat: { id: payload.chat_id, photoFileId: smallPhoto.id } as any,
+            });
+          }
+        }),
+
+        // User info updates — cache display names + track online status
+        listen<any>('td:user_updated', ({ payload }) => {
+          const u = payload.user ?? payload;
+          if (!u?.id) return;
+          const userId: number = u.id;
+          const name = [u.first_name ?? '', u.last_name ?? ''].filter(Boolean).join(' ') || `User ${userId}`;
+          userNameCache.set(userId, name);
+
+          // Online/offline status change
+          if (payload['@type'] === 'updateUserStatus') {
+            const isOnline = payload.status?.['@type'] === 'userStatusOnline';
+            dispatch({ type: 'UPDATE_CHAT_ONLINE', userId, isOnline });
+          }
+
+          // Resolve senderName in existing messages (for group chats)
+          // We don't know which chatId, so we dispatch a name update with the userId
+          if (name) {
+            dispatch({ type: 'UPDATE_MESSAGE_SENDER_NAME', chatId: -1, senderId: userId, name });
           }
         }),
 

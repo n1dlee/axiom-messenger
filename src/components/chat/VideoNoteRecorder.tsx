@@ -35,7 +35,11 @@ export function VideoNoteRecorder({ onSend, onCancel }: Props) {
       }
 
       chunksRef.current = [];
-      const mr = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus' });
+      const mimeType =
+        MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' :
+        MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' :
+        MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       mediaRecorderRef.current = mr;
 
       mr.ondataavailable = e => {

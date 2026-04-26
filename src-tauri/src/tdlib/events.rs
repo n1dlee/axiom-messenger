@@ -62,6 +62,15 @@ pub fn dispatch(update: Value, app: &AppHandle) {
         "updateFile" => {
             let _ = app.emit("td:file", &update);
         }
+        "updateMessageSendSucceeded" => {
+            let _ = app.emit("td:message_sent", &update);
+        }
+        "updateMessageSendFailed" => {
+            let _ = app.emit("td:message_failed", &update);
+        }
+        "updateChatPhoto" => {
+            let _ = app.emit("td:chat_photo_updated", &update);
+        }
         // Typing indicators
         "updateChatAction" => {
             let _ = app.emit("td:typing", &update);

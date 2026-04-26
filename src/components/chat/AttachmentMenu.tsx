@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent } from 'react';
+import { open } from '@tauri-apps/plugin-dialog';
 import styles from './AttachmentMenu.module.css';
 
 interface Props {
@@ -9,32 +9,25 @@ interface Props {
 }
 
 export function AttachmentMenu({ onSendPhoto, onSendVideo, onSendDocument, onClose }: Props) {
-  const photoRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Convert to a path-like string for Tauri
-    // In Tauri 2, we need to use dialog plugin for native path picking
-    // For now, use object URL as placeholder
-    onSendPhoto(file.name);
-    onClose();
+  async function pickPhoto() {
+    const result = await open({
+      multiple: false,
+      filters: [{ name: 'Изображения', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'heic', 'heif'] }],
+    });
+    if (typeof result === 'string') { onSendPhoto(result); onClose(); }
   }
 
-  function handleVideoChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    onSendVideo(file.name);
-    onClose();
+  async function pickVideo() {
+    const result = await open({
+      multiple: false,
+      filters: [{ name: 'Видео', extensions: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'm4v', '3gp'] }],
+    });
+    if (typeof result === 'string') { onSendVideo(result); onClose(); }
   }
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    onSendDocument(file.name);
-    onClose();
+  async function pickDocument() {
+    const result = await open({ multiple: false });
+    if (typeof result === 'string') { onSendDocument(result); onClose(); }
   }
 
   return (
@@ -43,54 +36,20 @@ export function AttachmentMenu({ onSendPhoto, onSendVideo, onSendDocument, onClo
       <div className={styles.backdrop} onClick={onClose} />
 
       <div className={styles.menu} role="menu" aria-label="Прикрепить файл">
-        <button
-          className={styles.item}
-          role="menuitem"
-          onClick={() => photoRef.current?.click()}
-        >
+        <button className={styles.item} role="menuitem" onClick={pickPhoto}>
           <span className={styles.itemIcon}>🖼</span>
-          <span className={styles.itemLabel}>Фото или видео</span>
+          <span className={styles.itemLabel}>Фото</span>
         </button>
 
-        <button
-          className={styles.item}
-          role="menuitem"
-          onClick={() => fileRef.current?.click()}
-        >
-          <span className={styles.itemIcon}>📎</span>
-          <span className={styles.itemLabel}>Файл</span>
-        </button>
-
-        <button
-          className={styles.item}
-          role="menuitem"
-          onClick={() => videoRef.current?.click()}
-        >
+        <button className={styles.item} role="menuitem" onClick={pickVideo}>
           <span className={styles.itemIcon}>🎬</span>
           <span className={styles.itemLabel}>Видео</span>
         </button>
 
-        {/* Hidden file inputs */}
-        <input
-          ref={photoRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={handlePhotoChange}
-        />
-        <input
-          ref={videoRef}
-          type="file"
-          accept="video/*"
-          hidden
-          onChange={handleVideoChange}
-        />
-        <input
-          ref={fileRef}
-          type="file"
-          hidden
-          onChange={handleFileChange}
-        />
+        <button className={styles.item} role="menuitem" onClick={pickDocument}>
+          <span className={styles.itemIcon}>📎</span>
+          <span className={styles.itemLabel}>Файл</span>
+        </button>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 use tauri::State;
 use crate::state::AppState;
 use crate::tdlib::{client, types};
+use std::io::Write;
 
 #[tauri::command]
 pub fn download_file(file_id: i32, priority: Option<i32>, state: State<AppState>) {
@@ -152,4 +153,33 @@ pub fn search_animations(query: String, state: State<AppState>) {
 #[tauri::command]
 pub fn get_recent_stickers(state: State<AppState>) {
     client::send(state.client_id, types::get_recent_stickers());
+}
+
+/// Write raw bytes (base64-encoded) to a temp file and return the absolute path.
+/// Used by the frontend to persist MediaRecorder blobs before sending to TDLib.
+#[tauri::command]
+pub fn write_temp_file(data_b64: String, extension: String) -> Result<String, String> {
+    let bytes = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        &data_b64,
+    )
+    .map_err(|e| e.to_string())?;
+
+    let ext = extension.trim_start_matches('.');
+    let file_name = format!("axiom_{}.{}", uuid_v4(), ext);
+    let path = std::env::temp_dir().join(&file_name);
+
+    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    file.write_all(&bytes).map_err(|e| e.to_string())?;
+
+    Ok(path.to_string_lossy().to_string())
+}
+
+fn uuid_v4() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos();
+    format!("{:x}", nanos)
 }

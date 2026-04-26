@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, type MouseEvent } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useApp } from '../../store/AppContext';
 import { useTdlib } from '../../hooks/useTdlib';
@@ -7,6 +8,7 @@ import { MessageInput } from './MessageInput';
 import { ContextMenu } from './ContextMenu';
 import { TypingIndicator } from './TypingIndicator';
 import { ForwardModal } from './ForwardModal';
+import { VoiceRecorder } from './VoiceRecorder';
 import { UserProfile } from '../profile/UserProfile';
 import { ChatInfo } from '../profile/ChatInfo';
 import { InChatSearch } from '../search/InChatSearch';
@@ -42,6 +44,9 @@ export function ChatView() {
 
   // Profile/info panels
   const [showProfile, setShowProfile] = useState(false);
+
+  // Voice recorder
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
   // In-chat search
   const [showSearch, setShowSearch] = useState(false);
@@ -170,10 +175,30 @@ export function ChatView() {
 
   async function handleSendVideoNote(blob: Blob, duration: number) {
     if (!state.activeChatId) return;
-    // Convert blob to a temp file path — in Tauri we'd use writeFile to tmp
-    // For now log intent; real implementation needs Tauri fs plugin
-    console.log('Video note ready:', blob.size, 'bytes,', duration, 'sec');
-    // TODO: write blob to temp file using Tauri fs plugin, then invoke send_video_note
+    try {
+      const b64 = await blobToBase64(blob);
+      const path = await invoke<string>('write_temp_file', { dataB64: b64, extension: 'webm' });
+      await invoke('send_video_note', {
+        chatId: state.activeChatId,
+        localPath: path,
+        duration,
+        replyToId: null,
+      });
+    } catch (err) {
+      console.error('Failed to send video note:', err);
+    }
+  }
+
+  function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        resolve(dataUrl.split(',')[1] ?? '');
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   function handleScroll() {
@@ -334,20 +359,33 @@ export function ChatView() {
         <TypingIndicator names={typingNames} />
       )}
 
+      {/* Voice recorder */}
+      {showVoiceRecorder && state.activeChatId && (
+        <VoiceRecorder
+          chatId={state.activeChatId}
+          replyToId={replyTo?.id}
+          onSent={() => { setShowVoiceRecorder(false); setReplyTo(null); }}
+          onCancel={() => setShowVoiceRecorder(false)}
+        />
+      )}
+
       {/* Input */}
-      <MessageInput
-        chatId={state.activeChatId}
-        onSend={handleSend}
-        onTyping={handleTyping}
-        replyTo={replyTo}
-        onCancelReply={() => setReplyTo(null)}
-        editMessage={editMessage}
-        onCancelEdit={() => setEditMessage(null)}
-        onSendPhoto={handleSendPhoto}
-        onSendVideo={handleSendVideo}
-        onSendDocument={handleSendDocument}
-        onSendVideoNote={handleSendVideoNote}
-      />
+      {!showVoiceRecorder && (
+        <MessageInput
+          chatId={state.activeChatId}
+          onSend={handleSend}
+          onTyping={handleTyping}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          editMessage={editMessage}
+          onCancelEdit={() => setEditMessage(null)}
+          onSendPhoto={handleSendPhoto}
+          onSendVideo={handleSendVideo}
+          onSendDocument={handleSendDocument}
+          onSendVideoNote={handleSendVideoNote}
+          onStartVoice={() => setShowVoiceRecorder(true)}
+        />
+      )}
 
       {/* Context Menu */}
       {contextMenu && (

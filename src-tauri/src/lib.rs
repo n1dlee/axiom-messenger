@@ -18,6 +18,7 @@ const TG_API_HASH: &str = "b50e74418eb9f9a57b05536cd248aec7";           // ← r
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Silence TDLib internal logs (level 1 = errors only)
             client::execute(types::set_log_verbosity(1));
@@ -82,6 +83,7 @@ pub fn run() {
             commands::messages::get_message,
             commands::messages::search_chat_messages,
             commands::messages::search_messages_global,
+            commands::messages::set_poll_answer,
             // Media
             commands::media::download_file,
             commands::media::send_photo,
@@ -98,6 +100,7 @@ pub fn run() {
             commands::media::get_saved_animations,
             commands::media::search_animations,
             commands::media::get_recent_stickers,
+            commands::media::write_temp_file,
             // Users & Profiles
             commands::users::get_user,
             commands::users::get_user_full_info,

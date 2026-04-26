@@ -33,6 +33,15 @@ export function Sidebar() {
     tdlib.getChatFolders();
   }, []);
 
+  // Trigger photo downloads for chats that have a photoFileId but no photoUrl
+  useEffect(() => {
+    for (const chat of state.chats) {
+      if (chat.photoFileId && !chat.photoUrl) {
+        tdlib.downloadFile(chat.photoFileId);
+      }
+    }
+  }, [state.chats.length]);
+
   // Keyboard shortcuts: Alt+↑/↓ to navigate chats
   useEffect(() => {
     function handlePrev() {

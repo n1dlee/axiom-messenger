@@ -4,6 +4,15 @@
   background: var(--glass-bg);
   backdrop-filter: var(--blur-md);
   -webkit-backdrop-filter: var(--blur-md);
+  position: relative;
+}
+
+.pickerAbove {
+  position: absolute;
+  bottom: 100%;
+  right: 8px;
+  z-index: 50;
+  margin-bottom: 4px;
 }
 
 /* Edit mode bar */

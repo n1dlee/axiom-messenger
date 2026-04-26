@@ -3,6 +3,7 @@ import type { Message } from '../../store/types';
 import { ReplyPreview } from './ReplyPreview';
 import { AttachmentMenu } from './AttachmentMenu';
 import { VideoNoteRecorder } from './VideoNoteRecorder';
+import { GifPicker } from '../picker/GifPicker';
 import styles from './MessageInput.module.css';
 
 interface Props {
@@ -18,17 +19,19 @@ interface Props {
   onSendVideo?: (path: string) => void;
   onSendDocument?: (path: string) => void;
   onSendVideoNote?: (blob: Blob, duration: number) => void;
+  onStartVoice?: () => void;
 }
 
 export function MessageInput({
   onSend, onTyping, disabled, chatId,
   replyTo, onCancelReply,
   editMessage, onCancelEdit,
-  onSendPhoto, onSendVideo, onSendDocument, onSendVideoNote,
+  onSendPhoto, onSendVideo, onSendDocument, onSendVideoNote, onStartVoice,
 }: Props) {
   const [text, setText] = useState('');
   const [showAttach, setShowAttach] = useState(false);
   const [showVideoNote, setShowVideoNote] = useState(false);
+  const [showGif, setShowGif] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attachWrapRef = useRef<HTMLDivElement>(null);
@@ -169,6 +172,34 @@ export function MessageInput({
             aria-label="Поле ввода сообщения"
           />
 
+          {/* GIF button */}
+          {!isEditing && chatId && (
+            <button
+              type="button"
+              className={[styles.iconBtn, showGif ? styles.iconBtnActive : ''].join(' ').trim()}
+              aria-label="GIF"
+              disabled={disabled}
+              onClick={() => setShowGif(v => !v)}
+              title="GIF"
+            >
+              <GifIcon />
+            </button>
+          )}
+
+          {/* Voice note button (visible only when text is empty) */}
+          {!text.trim() && !isEditing && onStartVoice && (
+            <button
+              type="button"
+              className={styles.iconBtn}
+              aria-label="Записать голосовое сообщение"
+              disabled={disabled}
+              onClick={onStartVoice}
+              title="Голосовое сообщение"
+            >
+              <MicIcon />
+            </button>
+          )}
+
           {/* Video note button (visible only when text is empty) */}
           {!text.trim() && !isEditing && onSendVideoNote && (
             <button
@@ -194,6 +225,13 @@ export function MessageInput({
         </div>
       </form>
 
+      {/* GIF picker — floats above the input bar */}
+      {showGif && chatId && (
+        <div className={styles.pickerAbove}>
+          <GifPicker chatId={chatId} onClose={() => setShowGif(false)} />
+        </div>
+      )}
+
       {/* Video note recorder modal */}
       {showVideoNote && (
         <VideoNoteRecorder
@@ -215,6 +253,32 @@ function VideoNoteIcon() {
       strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10"/>
       <polygon points="10 8 16 12 10 16 10 8"/>
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+  );
+}
+
+function GifIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2"/>
+      <path d="M8 12H6a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h1v-2"/>
+      <line x1="12" y1="9" x2="12" y2="15"/>
+      <path d="M17 9h-2v6h2M17 12h-2"/>
     </svg>
   );
 }

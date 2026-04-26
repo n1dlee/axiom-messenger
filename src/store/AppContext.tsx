@@ -119,6 +119,43 @@ function reducer(state: AppState, action: AppAction): AppState {
       return { ...state, messages: updatedMessages };
     }
 
+    case 'UPDATE_CHAT_PHOTO': {
+      const chats = state.chats.map(c =>
+        c.photoFileId === action.fileId
+          ? { ...c, photoUrl: action.photoUrl, photoFileId: undefined }
+          : c
+      );
+      return { ...state, chats };
+    }
+
+    case 'UPDATE_CHAT_ONLINE': {
+      const chats = state.chats.map(c =>
+        c.type === 'private' && c.senderId === action.userId
+          ? { ...c, isOnline: action.isOnline }
+          : c
+      );
+      return { ...state, chats };
+    }
+
+    case 'UPDATE_MESSAGE_SENDER_NAME': {
+      // chatId === -1 means update across all chats
+      const targetChatIds = action.chatId === -1
+        ? Object.keys(state.messages).map(Number)
+        : [action.chatId];
+      const updatedMessages = { ...state.messages };
+      for (const cid of targetChatIds) {
+        const msgs = updatedMessages[cid];
+        if (!msgs) continue;
+        const next = msgs.map(m =>
+          m.senderId === action.senderId && !m.isOutgoing && !m.senderName
+            ? { ...m, senderName: action.name }
+            : m
+        );
+        updatedMessages[cid] = next;
+      }
+      return { ...state, messages: updatedMessages };
+    }
+
     case 'UPDATE_MESSAGE_REACTIONS': {
       const existing = state.messages[action.chatId] ?? [];
       return {

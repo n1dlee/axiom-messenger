@@ -122,3 +122,16 @@ pub fn search_messages_global(
         types::search_messages(&query, from_message_id.unwrap_or(0), limit.unwrap_or(50)),
     );
 }
+
+#[tauri::command]
+pub fn set_poll_answer(
+    chat_id: i64,
+    message_id: i64,
+    option_ids: Vec<i32>,
+    state: State<AppState>,
+) {
+    client::send(
+        state.client_id,
+        types::set_poll_answer(chat_id, message_id, &option_ids),
+    );
+}

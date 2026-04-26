@@ -3,6 +3,8 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import type { Message, Reaction } from '../../store/types';
 import { useTdlib } from '../../hooks/useTdlib';
 import { VoiceMessage } from '../media/VoiceMessage';
+import { PollMessage } from './PollMessage';
+import { renderFormattedText } from '../../utils/renderText';
 import styles from './MessageBubble.module.css';
 
 interface Props {
@@ -44,7 +46,7 @@ function useAutoDownload(fileId?: number, localPath?: string) {
 
 /** Media content rendered inside a message bubble */
 function MediaContent({ message }: { message: Message }) {
-  const { mediaType, fileId, localPath, fileName, fileSize, duration, text } = message;
+  const { mediaType, fileId, localPath, fileName, fileSize, duration, text, poll } = message;
   useAutoDownload(fileId, localPath);
 
   const fileSrc = localPath ? convertFileSrc(localPath) : null;
@@ -180,6 +182,12 @@ function MediaContent({ message }: { message: Message }) {
         </div>
       );
 
+    case 'poll':
+      if (poll) {
+        return <PollMessage poll={poll} messageId={message.id} chatId={message.chatId} />;
+      }
+      return <p className={styles.caption}>{text}</p>;
+
     default:
       return null;
   }
@@ -243,7 +251,9 @@ export function MessageBubble({ message, showSender, onReact }: Props) {
         {/* Text content (for text messages or captions not already shown by MediaContent) */}
         {!hasMedia && (
           <p className={[styles.text, isDeleted ? styles.textDeleted : ''].join(' ').trim()}>
-            {message.text || (isDeleted ? '[медиа]' : '')}
+            {isDeleted
+              ? '[медиа]'
+              : renderFormattedText(message.text, message.entities)}
           </p>
         )}
 
@@ -256,7 +266,13 @@ export function MessageBubble({ message, showSender, onReact }: Props) {
         {!isSticker && (
           <div className={styles.meta}>
             <span className={styles.time}>{formatTime(message.date)}</span>
-            {isOut && <CheckIcon read={false} />}
+            {isOut && !isDeleted && (
+              message.sendState === 'failed'
+                ? <span className={styles.failedMark} title="Не отправлено">!</span>
+                : message.sendState === 'pending'
+                  ? <span className={styles.pendingMark} title="Отправляется…">○</span>
+                  : <CheckIcon read={false} />
+            )}
           </div>
         )}
       </div>

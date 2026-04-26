@@ -201,6 +201,12 @@ export function useTdlib() {
     []
   );
 
+  const writeTempFile = useCallback(
+    (dataB64: string, extension: string) =>
+      invoke<string>('write_temp_file', { dataB64, extension }),
+    []
+  );
+
   const getInstalledStickerSets = useCallback(() =>
     invoke('get_installed_sticker_sets'), []);
 
@@ -332,7 +338,7 @@ export function useTdlib() {
     pinMessage, unpinMessage,
     searchChatMessages, searchMessagesGlobal,
     // Media
-    downloadFile,
+    downloadFile, writeTempFile,
     sendPhoto, sendDocument, sendVoiceNote, sendVideoNote, sendVideo,
     sendSticker, sendAnimation,
     getInstalledStickerSets, getStickerSet, searchStickerSets,

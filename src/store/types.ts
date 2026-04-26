@@ -14,6 +14,8 @@ export interface Chat {
   lastMessageDate?: number;
   unreadCount: number;
   photoUrl?: string;
+  /** TDLib file id for the chat's small photo — set until download completes */
+  photoFileId?: number;
   isOnline?: boolean;
   isMuted?: boolean;
   /** TDLib position.order — used for sorting (higher = higher in list) */
@@ -25,7 +27,25 @@ export interface Chat {
 
 export type MediaType =
   | 'photo' | 'video' | 'videoNote' | 'voice'
-  | 'document' | 'sticker' | 'gif' | 'audio';
+  | 'document' | 'sticker' | 'gif' | 'audio' | 'poll';
+
+export interface PollOption {
+  text: string;
+  voterCount: number;
+  isChosen: boolean;
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+  totalVoterCount: number;
+  isClosed: boolean;
+  isAnonymous: boolean;
+  isQuiz: boolean;
+  correctOptionId?: number;
+  userSelectedOptions: number[];
+}
 
 export interface Reaction {
   emoji: string;
@@ -34,10 +54,19 @@ export interface Reaction {
   isMe: boolean;
 }
 
+export interface TextEntity {
+  offset: number;
+  length: number;
+  type: string;   // e.g. 'textEntityTypeUrl', 'textEntityTypeBold', etc.
+  url?: string;   // for textEntityTypeTextUrl
+}
+
 export interface Message {
   id: number;
   chatId: number;
   text: string;
+  /** TDLib formattedText entities for rich text rendering */
+  entities?: TextEntity[];
   date: number;
   isOutgoing: boolean;
   isDeleted?: boolean;
@@ -61,8 +90,12 @@ export interface Message {
   fileSize?: number;
   /** Caption for media messages */
   caption?: string;
+  /** Poll data when mediaType === 'poll' */
+  poll?: Poll;
   /** Whether message was edited */
   editDate?: number;
+  /** Send state: undefined = sent, 'pending' = sending, 'failed' = failed */
+  sendState?: 'pending' | 'failed';
   /** Emoji reactions on this message */
   reactions?: Reaction[];
 }
@@ -95,6 +128,12 @@ export type AppAction =
   | { type: 'UPDATE_MESSAGE'; chatId: number; message: Partial<Message> & { id: number } }
   /** Fired when a TDLib file finishes downloading — updates localPath across all chats */
   | { type: 'UPDATE_MESSAGE_FILE'; fileId: number; localPath: string }
+  /** Fired when a chat's photo file finishes downloading */
+  | { type: 'UPDATE_CHAT_PHOTO'; fileId: number; photoUrl: string }
+  /** Fired when a user's online status changes */
+  | { type: 'UPDATE_CHAT_ONLINE'; userId: number; isOnline: boolean }
+  /** Update a message's senderName once user info is available */
+  | { type: 'UPDATE_MESSAGE_SENDER_NAME'; chatId: number; senderId: number; name: string }
   /** Fired when TDLib sends updateMessageReactions */
   | { type: 'UPDATE_MESSAGE_REACTIONS'; chatId: number; messageId: number; reactions: Reaction[] }
   | { type: 'SET_MESSAGES_LOADING'; loading: boolean }
