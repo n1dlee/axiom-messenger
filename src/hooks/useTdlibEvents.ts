@@ -87,7 +87,7 @@ export function parseMessage(raw: any, chatId: number): Message {
 
     case 'messagePhoto':
       caption = c.caption?.text ?? '';
-      text = caption;
+      text = caption ?? '';
       mediaType = 'photo';
       // Pick largest photo size
       if (c.photo?.sizes?.length) {
@@ -98,7 +98,7 @@ export function parseMessage(raw: any, chatId: number): Message {
 
     case 'messageVideo':
       caption = c.caption?.text ?? '';
-      text = caption;
+      text = caption ?? '';
       mediaType = 'video';
       fileId = c.video?.video?.id;
       duration = c.video?.duration;
@@ -130,7 +130,7 @@ export function parseMessage(raw: any, chatId: number): Message {
 
     case 'messageDocument':
       caption = c.caption?.text ?? '';
-      text = caption;
+      text = caption ?? '';
       mediaType = 'document';
       fileId = c.document?.document?.id;
       fileName = c.document?.file_name;
@@ -145,7 +145,7 @@ export function parseMessage(raw: any, chatId: number): Message {
 
     case 'messageAnimation':
       caption = c.caption?.text ?? '';
-      text = caption;
+      text = caption ?? '';
       mediaType = 'gif';
       fileId = c.animation?.animation?.id;
       duration = c.animation?.duration;
@@ -328,14 +328,28 @@ export function useTdlibEvents() {
         }),
 
         // Response to getChatHistory
+        // @extra is { chat_id, from_message_id } — use from_message_id to distinguish
+        // initial load (0) from pagination requests (>0)
         listen<any>('td:messages', ({ payload }) => {
-          const chatId: number = payload['@extra'] ?? payload.chat_id;
+          const extra = payload['@extra'];
+          const chatId: number = typeof extra === 'object' && extra !== null
+            ? (extra.chat_id ?? extra)
+            : (extra ?? payload.chat_id);
+          const fromMessageId: number = typeof extra === 'object' && extra !== null
+            ? (extra.from_message_id ?? 0)
+            : 0;
           const msgs: Message[] = (payload.messages ?? []).map((m: any) =>
             parseMessage(m, chatId)
           );
           // TDLib returns messages newest-first; reverse to oldest-first
           msgs.reverse();
-          dispatch({ type: 'SET_MESSAGES', chatId, messages: msgs });
+          if (fromMessageId > 0) {
+            // Pagination: prepend older messages at top
+            dispatch({ type: 'PREPEND_MESSAGES', chatId, messages: msgs });
+          } else {
+            // Initial load: replace
+            dispatch({ type: 'SET_MESSAGES', chatId, messages: msgs });
+          }
           dispatch({ type: 'SET_MESSAGES_LOADING', loading: false });
         }),
 
@@ -382,6 +396,35 @@ export function useTdlibEvents() {
             s === 'connectionStateConnecting' || s === 'connectionStateConnectingToProxy'
               ? 'connecting' : 'offline';
           dispatch({ type: 'SET_CONNECTION', state: mapped });
+        }),
+
+        // File download progress / completion
+        listen<any>('td:file', ({ payload }) => {
+          const file = payload.file ?? payload;
+          if (file?.local?.is_downloading_complete && file.local.path) {
+            dispatch({
+              type: 'UPDATE_MESSAGE_FILE',
+              fileId: file.id,
+              localPath: file.local.path as string,
+            });
+          }
+        }),
+
+        // Message reactions updated
+        listen<any>('td:message_reactions', ({ payload }) => {
+          if (payload.chat_id && payload.message_id) {
+            const reactions = (payload.reactions ?? []).map((r: any) => ({
+              emoji: r.reaction_type?.emoji ?? r.type?.emoji ?? '',
+              count: r.total_count ?? 0,
+              isMe: r.is_chosen ?? false,
+            }));
+            dispatch({
+              type: 'UPDATE_MESSAGE_REACTIONS',
+              chatId: payload.chat_id,
+              messageId: payload.message_id,
+              reactions,
+            });
+          }
         }),
       ]);
 

@@ -227,6 +227,140 @@
   font-size: 40px;
 }
 
+/* ── Real media elements ── */
+.mediaWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 320px;
+}
+
+.photoImg {
+  width: 100%;
+  max-width: 320px;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  display: block;
+  cursor: zoom-in;
+}
+
+.videoEl {
+  width: 100%;
+  max-width: 320px;
+  max-height: 300px;
+  border-radius: var(--radius-md);
+  display: block;
+  background: #000;
+}
+
+.gifEl {
+  width: 100%;
+  max-width: 320px;
+  max-height: 300px;
+  border-radius: var(--radius-md);
+  display: block;
+}
+
+/* ── Video note (circle) real element ── */
+.videoNoteWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-1) 0;
+}
+
+.videoNoteEl {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: var(--bg-depth-2);
+}
+
+.videoNoteDuration {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ── Document row with download link ── */
+.documentWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  min-width: 180px;
+}
+
+.downloadBtn {
+  margin-left: auto;
+  color: var(--accent-400);
+  font-size: 18px;
+  text-decoration: none;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast);
+}
+
+.downloadBtn:hover {
+  background: var(--glass-bg-active);
+}
+
+/* ── Sticker real image ── */
+.stickerWrapInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 128px;
+}
+
+.stickerImg {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+}
+
+/* ── Reaction pills ── */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px var(--space-4) 0;
+}
+
+.reactionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.reactionPill:hover {
+  background: var(--glass-bg-active);
+  border-color: var(--accent-500);
+}
+
+.reactionMine {
+  background: color-mix(in srgb, var(--accent-500) 20%, transparent);
+  border-color: var(--accent-500);
+}
+
+.reactionCount {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+}
+
 /* ── Date separator ── */
 .dateSep {
   display: flex;

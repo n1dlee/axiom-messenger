@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, type MouseEvent } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useApp } from '../../store/AppContext';
 import { useTdlib } from '../../hooks/useTdlib';
@@ -50,6 +50,12 @@ export function ChatView() {
   const [typingNames, setTypingNames] = useState<string[]>([]);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Pagination refs
+  const loadingOlderRef = useRef(false);
+  const prevScrollHeightRef = useRef(0);
+  const isPrependingRef = useRef(false);
+  const wasAtBottomRef = useRef(true);
+
   const activeChat = state.chats.find(c => c.id === state.activeChatId);
   const messages: Message[] = state.activeChatId
     ? (state.messages[state.activeChatId] ?? [])
@@ -65,10 +71,29 @@ export function ChatView() {
   }
   allMessages.sort((a, b) => a.date - b.date);
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Preserve scroll position after prepend (runs synchronously before paint)
+  useLayoutEffect(() => {
+    if (isPrependingRef.current && messagesRef.current) {
+      const diff = messagesRef.current.scrollHeight - prevScrollHeightRef.current;
+      messagesRef.current.scrollTop = diff;
+      isPrependingRef.current = false;
+      loadingOlderRef.current = false;
+    }
   }, [allMessages.length]);
+
+  // Auto-scroll to bottom only when user is already near the bottom
+  useEffect(() => {
+    if (wasAtBottomRef.current && !isPrependingRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [allMessages.length]);
+
+  // Reset scroll tracking on chat change
+  useEffect(() => {
+    wasAtBottomRef.current = true;
+    loadingOlderRef.current = false;
+    isPrependingRef.current = false;
+  }, [state.activeChatId]);
 
   // Mark messages as read (respects ghost mode)
   useEffect(() => {
@@ -78,6 +103,13 @@ export function ChatView() {
       .map(m => m.id);
     if (ids.length) tdlib.viewMessages(state.activeChatId, ids);
   }, [state.activeChatId, allMessages.length]);
+
+  // Ctrl+F keyboard shortcut to toggle in-chat search
+  useEffect(() => {
+    function onToggleSearch() { setShowSearch(v => !v); }
+    window.addEventListener('axiom:toggle-search', onToggleSearch);
+    return () => window.removeEventListener('axiom:toggle-search', onToggleSearch);
+  }, []);
 
   // Typing indicator listener
   useEffect(() => {
@@ -142,6 +174,35 @@ export function ChatView() {
     // For now log intent; real implementation needs Tauri fs plugin
     console.log('Video note ready:', blob.size, 'bytes,', duration, 'sec');
     // TODO: write blob to temp file using Tauri fs plugin, then invoke send_video_note
+  }
+
+  function handleScroll() {
+    const el = messagesRef.current;
+    if (!el || !state.activeChatId) return;
+    // Track whether user is at bottom (within 100px)
+    wasAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    // Load older messages when within 80px of the top
+    if (
+      el.scrollTop < 80 &&
+      !loadingOlderRef.current &&
+      allMessages.length > 0
+    ) {
+      loadingOlderRef.current = true;
+      prevScrollHeightRef.current = el.scrollHeight;
+      isPrependingRef.current = true;
+      tdlib.getHistory(state.activeChatId, allMessages[0].id, 50);
+    }
+  }
+
+  function handleReact(messageId: number, emoji: string) {
+    if (!state.activeChatId) return;
+    const msg = allMessages.find(m => m.id === messageId);
+    const existing = msg?.reactions?.find(r => r.emoji === emoji);
+    if (existing?.isMe) {
+      tdlib.removeMessageReaction(state.activeChatId, messageId, emoji);
+    } else {
+      tdlib.addMessageReaction(state.activeChatId, messageId, emoji);
+    }
   }
 
   function handleContextMenu(e: MouseEvent, message: Message) {
@@ -235,9 +296,15 @@ export function ChatView() {
         role="log"
         aria-live="polite"
         aria-label="Сообщения"
+        onScroll={handleScroll}
       >
         {state.messagesLoading && allMessages.length === 0 && (
           <div className={styles.loadingMsgs}>Загрузка…</div>
+        )}
+
+        {/* Loading indicator while fetching older messages */}
+        {loadingOlderRef.current && allMessages.length > 0 && (
+          <div className={styles.loadingOlder}>↑ Загрузка…</div>
         )}
 
         {allMessages.map((msg, i) => {
@@ -253,6 +320,7 @@ export function ChatView() {
               <MessageBubble
                 message={msg}
                 showSender={activeChat.type !== 'private'}
+                onReact={handleReact}
               />
             </div>
           );
@@ -268,6 +336,7 @@ export function ChatView() {
 
       {/* Input */}
       <MessageInput
+        chatId={state.activeChatId}
         onSend={handleSend}
         onTyping={handleTyping}
         replyTo={replyTo}

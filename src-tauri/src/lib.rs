@@ -10,8 +10,8 @@ use tdlib::{client, types};
 // ─── Telegram API credentials ────────────────────────────────────────────────
 // Register your app at https://my.telegram.org → "API development tools"
 // to get your own api_id / api_hash, then fill them in here.
-const TG_API_ID: i32 = 0;               // ← replace with your API ID
-const TG_API_HASH: &str = "";           // ← replace with your API hash
+const TG_API_ID: i32 = 29203711;               // ← replace with your API ID
+const TG_API_HASH: &str = "b50e74418eb9f9a57b05536cd248aec7";           // ← replace with your API hash
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -66,6 +66,7 @@ pub fn run() {
             commands::chats::get_chat_folders,
             commands::chats::leave_chat,
             commands::chats::delete_chat,
+            commands::chats::get_chats_in_folder,
             // Messages
             commands::messages::get_chat_history,
             commands::messages::send_message,
@@ -123,6 +124,7 @@ pub fn run() {
             commands::settings::get_privacy_setting_rules,
             commands::settings::set_privacy_setting_rules,
             commands::settings::get_scope_notification_settings,
+            commands::settings::set_scope_notification_settings,
             commands::settings::get_active_sessions,
             commands::settings::terminate_session,
             commands::settings::terminate_all_other_sessions,

@@ -65,6 +65,23 @@ pub fn get_scope_notification_settings(scope: String, state: State<AppState>) {
 }
 
 #[tauri::command]
+pub fn set_scope_notification_settings(
+    scope: String,
+    mute_for: Option<i32>,
+    show_preview: Option<bool>,
+    state: State<AppState>,
+) {
+    client::send(
+        state.client_id,
+        types::set_scope_notification_settings(
+            &scope,
+            mute_for.unwrap_or(0),
+            show_preview.unwrap_or(true),
+        ),
+    );
+}
+
+#[tauri::command]
 pub fn get_active_sessions(state: State<AppState>) {
     client::send(state.client_id, types::get_active_sessions());
 }

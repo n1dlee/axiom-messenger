@@ -125,6 +125,14 @@
   animation: fadeIn 0.3s ease;
 }
 
+.loadingOlder {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  padding: var(--space-2) 0;
+  animation: fadeIn 0.2s ease;
+}
+
 /* ── Empty state ── */
 .empty {
   flex: 1;

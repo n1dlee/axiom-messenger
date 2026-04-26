@@ -24,9 +24,9 @@ interface UserFull {
   lastSeen?: string;
 }
 
-export function UserProfile({ userId, chatId, onClose, onMessage }: Props) {
+export function UserProfile({ userId, chatId: _chatId, onClose, onMessage }: Props) {
   const tdlib = useTdlib();
-  const { dispatch } = useApp();
+  const { dispatch: _dispatch } = useApp();
   const [user, setUser] = useState<UserFull | null>(null);
   const [blocked, setBlocked] = useState(false);
 

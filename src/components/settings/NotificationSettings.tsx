@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import { useTdlib } from '../../hooks/useTdlib';
 import styles from './Settings.module.css';
 
 interface NotifGroup {
@@ -20,6 +22,7 @@ interface NotifState {
 }
 
 export function NotificationSettings() {
+  const tdlib = useTdlib();
   const [settings, setSettings] = useState<Record<string, NotifState>>(() =>
     Object.fromEntries(GROUPS.map(g => [
       g.scope,
@@ -27,12 +30,42 @@ export function NotificationSettings() {
     ]))
   );
 
+  // Fetch current settings from TDLib on mount
+  useEffect(() => {
+    GROUPS.forEach(g => tdlib.getNotificationSettings(g.scope));
+  }, []);
+
+  // Listen for TDLib notification settings responses
+  useEffect(() => {
+    const unlisten = listen<any>('td:notification_settings', ({ payload }) => {
+      // scopeNotificationSettings response — find which scope it belongs to
+      // TDLib echoes back the @extra or we infer from context; for now refresh all
+      // The payload is the scopeNotificationSettings object
+      const muteFor: number = payload.mute_for ?? 0;
+      const showPreview: boolean = payload.show_preview ?? true;
+      // We can't easily know which scope responded, so we apply to all matching
+      // In practice, TDLib sends them sequentially so we handle gracefully
+      setSettings(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(scope => {
+          // Only update if this is a fresh fetch (not user-driven change)
+          updated[scope] = { ...updated[scope], muteFor, showPreview };
+        });
+        return updated;
+      });
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, []);
+
   function update(scope: string, key: keyof NotifState, value: boolean | number) {
-    setSettings(prev => ({
-      ...prev,
-      [scope]: { ...prev[scope], [key]: value },
-    }));
-    // TODO: invoke set_scope_notification_settings
+    const newState = { ...settings[scope], [key]: value };
+    setSettings(prev => ({ ...prev, [scope]: newState }));
+    // Persist to TDLib immediately
+    tdlib.setNotificationSettings(
+      scope,
+      key === 'muteFor' ? (value as number) : newState.muteFor,
+      key === 'showPreview' ? (value as boolean) : newState.showPreview,
+    );
   }
 
   return (

@@ -27,6 +27,13 @@ export type MediaType =
   | 'photo' | 'video' | 'videoNote' | 'voice'
   | 'document' | 'sticker' | 'gif' | 'audio';
 
+export interface Reaction {
+  emoji: string;
+  count: number;
+  /** True if the current user has added this reaction */
+  isMe: boolean;
+}
+
 export interface Message {
   id: number;
   chatId: number;
@@ -42,8 +49,10 @@ export interface Message {
   mediaType?: MediaType;
   /** TDLib file id for downloading */
   fileId?: number;
-  /** Local path after download */
+  /** Local path after download completes */
   localPath?: string;
+  /** True while TDLib is downloading this file */
+  isDownloading?: boolean;
   /** Duration in seconds (voice/video/videoNote) */
   duration?: number;
   /** File name for documents */
@@ -54,6 +63,8 @@ export interface Message {
   caption?: string;
   /** Whether message was edited */
   editDate?: number;
+  /** Emoji reactions on this message */
+  reactions?: Reaction[];
 }
 
 export interface AppState {
@@ -82,6 +93,10 @@ export type AppAction =
   | { type: 'PREPEND_MESSAGES'; chatId: number; messages: Message[] }
   | { type: 'APPEND_MESSAGE'; chatId: number; message: Message }
   | { type: 'UPDATE_MESSAGE'; chatId: number; message: Partial<Message> & { id: number } }
+  /** Fired when a TDLib file finishes downloading — updates localPath across all chats */
+  | { type: 'UPDATE_MESSAGE_FILE'; fileId: number; localPath: string }
+  /** Fired when TDLib sends updateMessageReactions */
+  | { type: 'UPDATE_MESSAGE_REACTIONS'; chatId: number; messageId: number; reactions: Reaction[] }
   | { type: 'SET_MESSAGES_LOADING'; loading: boolean }
   | { type: 'TOGGLE_GHOST_MODE' }
   | { type: 'SET_GHOST_MODE'; enabled: boolean }

@@ -81,9 +81,51 @@ export function EmojiPicker({ onSelect, onClose }: Props) {
 
   const searchResults = useMemo(() => {
     if (!search) return null;
+    const q = search.toLowerCase().trim();
+    if (!q) return null;
+    // Keyword map for common emoji names (covers ~80% of search intent)
+    const keywords: Record<string, string> = {
+      '😀':'smile happy grin','😂':'laugh cry funny lol','❤️':'heart love red',
+      '😍':'love eyes heart face','🔥':'fire hot flame','👍':'like ok thumbs up',
+      '😊':'smile happy blush','🥰':'love hearts smiling','😭':'cry sad tears',
+      '🙏':'pray thanks hands fold','💯':'100 perfect score',
+      '🎉':'party celebrate confetti','🥳':'party celebrate birthday',
+      '😢':'cry sad tears','😤':'angry frustrated','😡':'angry mad red',
+      '🤣':'laugh rolling floor','😘':'kiss love','😋':'yummy delicious food',
+      '🤔':'think hmm wonder','😎':'cool sunglasses chill','🤗':'hug embrace',
+      '😴':'sleep tired zzz','😷':'sick mask ill','🤒':'sick fever ill',
+      '👋':'wave hello bye hand','👏':'clap applause','💪':'strong muscle flex',
+      '🎊':'celebrate confetti party','🌟':'star shine sparkle',
+      '⭐':'star yellow','🌙':'moon night sleep','☀️':'sun day bright warm',
+      '🐶':'dog puppy animal','🐱':'cat kitten animal','🐭':'mouse animal',
+      '🐸':'frog green animal','🦊':'fox animal orange','🦁':'lion king animal',
+      '🐧':'penguin bird animal','🦋':'butterfly insect colorful',
+      '🌸':'flower pink cherry blossom','🌹':'rose flower red love',
+      '🍕':'pizza food italian','🍔':'burger food fast','🍣':'sushi japanese food',
+      '🍰':'cake dessert birthday sweet','🎂':'birthday cake celebrate',
+      '☕':'coffee hot drink morning','🍺':'beer drink alcohol',
+      '🏠':'house home building','🌍':'earth world globe',
+      '✈️':'plane fly travel airport','🚗':'car vehicle drive',
+      '⚽':'soccer ball sport','🏀':'basketball sport','🎮':'game controller play',
+      '🎵':'music note song','🎶':'music notes songs',
+      '💀':'skull dead death','👻':'ghost scary halloween',
+      '💩':'poop funny brown','🤡':'clown funny joker',
+      '🙈':'monkey see no evil','🙉':'monkey hear no evil','🙊':'monkey speak no evil',
+      '💋':'kiss lips red','💔':'broken heart sad love',
+      '🤝':'handshake deal agree','✌️':'peace victory two fingers',
+      '🖕':'middle finger rude','🤞':'fingers crossed luck hope',
+    };
     const all = EMOJI_CATEGORIES.flatMap(c => c.emojis);
-    // Simple: return all emoji (can't filter by name without a dictionary)
-    return all.slice(0, 48);
+    const matches = all.filter(e => {
+      const kw = keywords[e] ?? '';
+      return e === q || kw.includes(q);
+    });
+    // Also include emojis from categories whose name matches
+    const catMatches = EMOJI_CATEGORIES
+      .filter(c => c.name.toLowerCase().includes(q))
+      .flatMap(c => c.emojis);
+    const combined = [...new Set([...matches, ...catMatches])];
+    return combined.length ? combined : all.slice(0, 48);
   }, [search]);
 
   const displayEmojis = searchResults ?? EMOJI_CATEGORIES[activeCategory].emojis;

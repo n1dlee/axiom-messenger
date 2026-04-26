@@ -1,9 +1,14 @@
-import type { Message } from '../../store/types';
+import { useEffect } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import type { Message, Reaction } from '../../store/types';
+import { useTdlib } from '../../hooks/useTdlib';
+import { VoiceMessage } from '../media/VoiceMessage';
 import styles from './MessageBubble.module.css';
 
 interface Props {
   message: Message;
   showSender?: boolean;
+  onReact?: (messageId: number, emoji: string) => void;
 }
 
 function formatTime(ts: number): string {
@@ -27,58 +32,92 @@ function formatFileSize(bytes?: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** Media content rendered inside the bubble (placeholder until Фаза 3 downloads) */
+/** Triggers a TDLib file download if not already downloaded */
+function useAutoDownload(fileId?: number, localPath?: string) {
+  const tdlib = useTdlib();
+  useEffect(() => {
+    if (fileId && !localPath) {
+      tdlib.downloadFile(fileId);
+    }
+  }, [fileId, localPath]);
+}
+
+/** Media content rendered inside a message bubble */
 function MediaContent({ message }: { message: Message }) {
-  const { mediaType, fileName, fileSize, duration, text } = message;
+  const { mediaType, fileId, localPath, fileName, fileSize, duration, text } = message;
+  useAutoDownload(fileId, localPath);
+
+  const fileSrc = localPath ? convertFileSrc(localPath) : null;
 
   switch (mediaType) {
     case 'photo':
       return (
-        <div className={styles.mediaPlaceholder}>
-          <span className={styles.mediaIcon}>🖼</span>
-          <span className={styles.mediaLabel}>Фото</span>
+        <div className={styles.mediaWrap}>
+          {fileSrc ? (
+            <img
+              src={fileSrc}
+              alt={text || 'Фото'}
+              className={styles.photoImg}
+              loading="lazy"
+            />
+          ) : (
+            <div className={styles.mediaPlaceholder}>
+              <span className={styles.mediaIcon}>🖼</span>
+              <span className={styles.mediaLabel}>Загрузка…</span>
+            </div>
+          )}
           {text && <p className={styles.caption}>{text}</p>}
         </div>
       );
 
     case 'video':
       return (
-        <div className={styles.mediaPlaceholder}>
-          <span className={styles.mediaIcon}>🎬</span>
-          <span className={styles.mediaLabel}>
-            Видео{duration ? ` · ${formatDuration(duration)}` : ''}
-            {fileSize ? ` · ${formatFileSize(fileSize)}` : ''}
-          </span>
+        <div className={styles.mediaWrap}>
+          {fileSrc ? (
+            <video
+              src={fileSrc}
+              controls
+              preload="metadata"
+              className={styles.videoEl}
+            />
+          ) : (
+            <div className={styles.mediaPlaceholder}>
+              <span className={styles.mediaIcon}>🎬</span>
+              <span className={styles.mediaLabel}>
+                Видео{duration ? ` · ${formatDuration(duration)}` : ''}
+                {fileSize ? ` · ${formatFileSize(fileSize)}` : ''}
+              </span>
+            </div>
+          )}
           {text && <p className={styles.caption}>{text}</p>}
         </div>
       );
 
     case 'videoNote':
       return (
-        <div className={styles.videoNotePlaceholder}>
-          <span className={styles.videoNoteIcon}>⭕</span>
-          <span className={styles.mediaLabel}>
-            Видеосообщение{duration ? ` · ${formatDuration(duration)}` : ''}
-          </span>
+        <div className={styles.videoNoteWrap}>
+          {fileSrc ? (
+            <video
+              src={fileSrc}
+              loop
+              autoPlay
+              muted
+              playsInline
+              className={styles.videoNoteEl}
+            />
+          ) : (
+            <div className={styles.videoNotePlaceholder}>
+              <span className={styles.videoNoteIcon}>⭕</span>
+            </div>
+          )}
+          {duration && (
+            <span className={styles.videoNoteDuration}>{formatDuration(duration)}</span>
+          )}
         </div>
       );
 
     case 'voice':
-      return (
-        <div className={styles.voicePlaceholder}>
-          <span className={styles.mediaIcon}>🎤</span>
-          <div className={styles.voiceWave}>
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className={styles.voiceBar}
-                style={{ height: `${8 + Math.sin(i * 0.8) * 8}px` }}
-              />
-            ))}
-          </div>
-          <span className={styles.voiceDuration}>{formatDuration(duration)}</span>
-        </div>
-      );
+      return <VoiceMessage message={message} />;
 
     case 'audio':
       return (
@@ -93,28 +132,50 @@ function MediaContent({ message }: { message: Message }) {
 
     case 'document':
       return (
-        <div className={styles.documentPlaceholder}>
+        <div className={styles.documentWrap}>
           <span className={styles.mediaIcon}>📎</span>
           <div className={styles.documentInfo}>
             <span className={styles.documentName}>{fileName || 'Файл'}</span>
             {fileSize && <span className={styles.documentSize}>{formatFileSize(fileSize)}</span>}
           </div>
+          {fileSrc && (
+            <a href={fileSrc} download={fileName} className={styles.downloadBtn} title="Скачать">
+              ⬇
+            </a>
+          )}
           {text && <p className={styles.caption}>{text}</p>}
         </div>
       );
 
     case 'sticker':
       return (
-        <div className={styles.stickerPlaceholder}>
-          <span className={styles.stickerEmoji}>{text || '😊'}</span>
+        <div className={styles.stickerWrapInner}>
+          {fileSrc ? (
+            <img src={fileSrc} alt={text || '😊'} className={styles.stickerImg} />
+          ) : (
+            <span className={styles.stickerEmoji}>{text || '😊'}</span>
+          )}
         </div>
       );
 
     case 'gif':
       return (
-        <div className={styles.mediaPlaceholder}>
-          <span className={styles.mediaIcon}>GIF</span>
-          <span className={styles.mediaLabel}>Анимация</span>
+        <div className={styles.mediaWrap}>
+          {fileSrc ? (
+            <video
+              src={fileSrc}
+              loop
+              autoPlay
+              muted
+              playsInline
+              className={styles.gifEl}
+            />
+          ) : (
+            <div className={styles.mediaPlaceholder}>
+              <span className={styles.mediaIcon}>GIF</span>
+              <span className={styles.mediaLabel}>Анимация</span>
+            </div>
+          )}
           {text && <p className={styles.caption}>{text}</p>}
         </div>
       );
@@ -124,7 +185,30 @@ function MediaContent({ message }: { message: Message }) {
   }
 }
 
-export function MessageBubble({ message, showSender }: Props) {
+/** Reaction pills below a message */
+function ReactionBar({ reactions, onReact, messageId }: {
+  reactions: Reaction[];
+  messageId: number;
+  onReact?: (messageId: number, emoji: string) => void;
+}) {
+  if (!reactions.length) return null;
+  return (
+    <div className={styles.reactions}>
+      {reactions.map(r => (
+        <button
+          key={r.emoji}
+          className={[styles.reactionPill, r.isMe ? styles.reactionMine : ''].join(' ').trim()}
+          onClick={() => onReact?.(messageId, r.emoji)}
+          title={r.isMe ? 'Убрать реакцию' : 'Добавить реакцию'}
+        >
+          {r.emoji} <span className={styles.reactionCount}>{r.count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function MessageBubble({ message, showSender, onReact }: Props) {
   const isOut = message.isOutgoing;
   const isDeleted = message.isDeleted;
   const hasMedia = Boolean(message.mediaType);
@@ -156,7 +240,7 @@ export function MessageBubble({ message, showSender }: Props) {
         {/* Media content */}
         {hasMedia && !isDeleted && <MediaContent message={message} />}
 
-        {/* Text content (for text messages or captions on non-sticker media) */}
+        {/* Text content (for text messages or captions not already shown by MediaContent) */}
         {!hasMedia && (
           <p className={[styles.text, isDeleted ? styles.textDeleted : ''].join(' ').trim()}>
             {message.text || (isDeleted ? '[медиа]' : '')}
@@ -176,6 +260,15 @@ export function MessageBubble({ message, showSender }: Props) {
           </div>
         )}
       </div>
+
+      {/* Reaction pills rendered outside bubble */}
+      {message.reactions && message.reactions.length > 0 && (
+        <ReactionBar
+          reactions={message.reactions}
+          messageId={message.id}
+          onReact={onReact}
+        />
+      )}
     </div>
   );
 }

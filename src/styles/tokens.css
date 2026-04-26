@@ -114,3 +114,52 @@
   --header-h:   60px;
   --input-h:    64px;
 }
+
+/* ─── Light theme overrides ──────────────────────────────────────────────────
+   Applied when <html data-theme="light"> is set (via AppearanceSettings)
+   ─────────────────────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg-base:        #f0f2f5;
+  --bg-depth-1:     #ffffff;
+  --bg-depth-2:     #f7f8fa;
+  --bg-depth-3:     #eceef2;
+
+  --glass-bg:           rgba(0, 0, 0, 0.03);
+  --glass-bg-hover:     rgba(0, 0, 0, 0.06);
+  --glass-bg-active:    rgba(123, 104, 255, 0.10);
+  --glass-bg-strong:    rgba(0, 0, 0, 0.08);
+  --glass-border:       rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(0, 0, 0, 0.14);
+  --glass-border-focus: rgba(123, 104, 255, 0.50);
+
+  --text-primary:   #1a1a2e;
+  --text-secondary: #555570;
+  --text-muted:     #9090a8;
+  --text-inverse:   #ffffff;
+
+  --bubble-out-bg:      rgba(123, 104, 255, 0.18);
+  --bubble-out-border:  rgba(123, 104, 255, 0.28);
+  --bubble-in-bg:       rgba(0, 0, 0, 0.04);
+  --bubble-in-border:   rgba(0, 0, 0, 0.08);
+  --bubble-deleted-bg:  rgba(0, 0, 0, 0.02);
+  --bubble-deleted-border: rgba(0, 0, 0, 0.06);
+
+  --unread: #7B68FF;
+  --danger: #EF4444;
+  --online: #22C55E;
+}
+
+/* ─── OLED theme (true black) ────────────────────────────────────────────────
+   Applied when <html data-theme="oled">
+   ─────────────────────────────────────────────────────────────────────────── */
+:root[data-theme="oled"] {
+  --bg-base:    #000000;
+  --bg-depth-1: #000000;
+  --bg-depth-2: #0a0a10;
+  --bg-depth-3: #111118;
+
+  --glass-bg:        rgba(255, 255, 255, 0.04);
+  --glass-bg-hover:  rgba(255, 255, 255, 0.07);
+  --glass-bg-active: rgba(255, 255, 255, 0.10);
+  --glass-border:    rgba(255, 255, 255, 0.06);
+}

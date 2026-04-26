@@ -47,9 +47,12 @@ pub fn get_chat(chat_id: i64) -> Value {
 }
 
 pub fn get_chat_history(chat_id: i64, from_message_id: i64, limit: i32) -> Value {
+    // @extra is echoed back in the "messages" response.
+    // We encode both chat_id and from_message_id so the frontend can distinguish
+    // initial loads (from_message_id == 0) from pagination (from_message_id > 0).
     json!({
         "@type": "getChatHistory",
-        "@extra": chat_id,
+        "@extra": { "chat_id": chat_id, "from_message_id": from_message_id },
         "chat_id": chat_id,
         "from_message_id": from_message_id,
         "offset": 0,
@@ -557,6 +560,31 @@ pub fn create_new_group(title: &str, user_ids: &[i64]) -> Value {
 
 pub fn get_chat_folders() -> Value {
     json!({ "@type": "getChatFolders" })
+}
+
+pub fn get_chats_in_folder(folder_id: i32, limit: i32) -> Value {
+    // Use @extra.folder_id so events.rs can route to td:folder_chats instead of td:chats_found
+    json!({
+        "@type": "getChats",
+        "@extra": { "folder_id": folder_id },
+        "chat_list": { "@type": "chatListFolder", "chat_folder_id": folder_id },
+        "limit": limit
+    })
+}
+
+pub fn set_scope_notification_settings(scope: &str, mute_for: i32, show_preview: bool) -> Value {
+    json!({
+        "@type": "setScopeNotificationSettings",
+        "scope": { "@type": scope },
+        "notification_settings": {
+            "@type": "scopeNotificationSettings",
+            "mute_for": mute_for,
+            "sound_id": 0,
+            "show_preview": show_preview,
+            "use_default_mute_for": false,
+            "use_default_show_preview": false
+        }
+    })
 }
 
 pub fn leave_chat(chat_id: i64) -> Value {

@@ -98,9 +98,17 @@ pub fn dispatch(update: Value, app: &AppHandle) {
         "accountTtl" => {
             let _ = app.emit("td:account_ttl", &update);
         }
-        // Chat search results
+        // Chat search results — or folder chats (distinguished by @extra.folder_id)
         "chats" | "foundChats" => {
-            let _ = app.emit("td:chats_found", &update);
+            let is_folder = update
+                .get("@extra")
+                .and_then(|e| e.get("folder_id"))
+                .is_some();
+            if is_folder {
+                let _ = app.emit("td:folder_chats", &update);
+            } else {
+                let _ = app.emit("td:chats_found", &update);
+            }
         }
         // Message search results
         "foundMessages" | "foundChatMessages" => {

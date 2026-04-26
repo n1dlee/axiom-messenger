@@ -9,6 +9,7 @@ interface Props {
   onSend: (text: string) => void;
   onTyping?: () => void;
   disabled?: boolean;
+  chatId?: number | null;
   replyTo?: Message | null;
   onCancelReply?: () => void;
   editMessage?: Message | null;
@@ -20,7 +21,7 @@ interface Props {
 }
 
 export function MessageInput({
-  onSend, onTyping, disabled,
+  onSend, onTyping, disabled, chatId,
   replyTo, onCancelReply,
   editMessage, onCancelEdit,
   onSendPhoto, onSendVideo, onSendDocument, onSendVideoNote,
@@ -31,6 +32,16 @@ export function MessageInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attachWrapRef = useRef<HTMLDivElement>(null);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load draft when chat changes
+  useEffect(() => {
+    if (!chatId || editMessage) return;
+    const saved = localStorage.getItem(`draft_${chatId}`) ?? '';
+    setText(saved);
+    // Resize textarea to match saved content
+    requestAnimationFrame(() => autoResize());
+  }, [chatId]);
 
   // Pre-fill text when entering edit mode
   useEffect(() => {
@@ -53,6 +64,8 @@ export function MessageInput({
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setText('');
+    // Clear saved draft on send
+    if (chatId) localStorage.removeItem(`draft_${chatId}`);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -70,10 +83,22 @@ export function MessageInput({
   }
 
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
-    setText(e.target.value);
+    const val = e.target.value;
+    setText(val);
     autoResize();
+    // Persist draft with 400ms debounce
+    if (chatId && !editMessage) {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = setTimeout(() => {
+        if (val.trim()) {
+          localStorage.setItem(`draft_${chatId}`, val);
+        } else {
+          localStorage.removeItem(`draft_${chatId}`);
+        }
+      }, 400);
+    }
     // Send typing action (debounced every 3s)
-    if (onTyping && e.target.value.length > 0) {
+    if (onTyping && val.length > 0) {
       if (!typingTimeoutRef.current) {
         onTyping();
         typingTimeoutRef.current = setTimeout(() => {

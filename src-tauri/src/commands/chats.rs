@@ -83,3 +83,11 @@ pub fn leave_chat(chat_id: i64, state: State<AppState>) {
 pub fn delete_chat(chat_id: i64, state: State<AppState>) {
     client::send(state.client_id, types::delete_chat(chat_id));
 }
+
+#[tauri::command]
+pub fn get_chats_in_folder(folder_id: i32, limit: Option<i32>, state: State<AppState>) {
+    client::send(
+        state.client_id,
+        types::get_chats_in_folder(folder_id, limit.unwrap_or(200)),
+    );
+}

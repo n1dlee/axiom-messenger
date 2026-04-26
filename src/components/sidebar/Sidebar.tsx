@@ -21,6 +21,7 @@ export function Sidebar() {
   const [showSettings, setShowSettings] = useState(false);
   const [folders, setFolders] = useState<ChatFolder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<number | null>(null);
+  const [folderChatIds, setFolderChatIds] = useState<Record<number, number[]>>({});
   const [chatMenu, setChatMenu] = useState<{ chat: Chat; x: number; y: number } | null>(null);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -31,6 +32,30 @@ export function Sidebar() {
     // Load chat folders
     tdlib.getChatFolders();
   }, []);
+
+  // Keyboard shortcuts: Alt+↑/↓ to navigate chats
+  useEffect(() => {
+    function handlePrev() {
+      const chats = state.chats;
+      if (!chats.length) return;
+      const idx = chats.findIndex(c => c.id === state.activeChatId);
+      const prev = idx <= 0 ? chats[chats.length - 1] : chats[idx - 1];
+      if (prev) openChat(prev.id);
+    }
+    function handleNext() {
+      const chats = state.chats;
+      if (!chats.length) return;
+      const idx = chats.findIndex(c => c.id === state.activeChatId);
+      const next = idx < 0 || idx >= chats.length - 1 ? chats[0] : chats[idx + 1];
+      if (next) openChat(next.id);
+    }
+    window.addEventListener('axiom:prev-chat', handlePrev);
+    window.addEventListener('axiom:next-chat', handleNext);
+    return () => {
+      window.removeEventListener('axiom:prev-chat', handlePrev);
+      window.removeEventListener('axiom:next-chat', handleNext);
+    };
+  }, [state.chats, state.activeChatId]);
 
   // Listen for folder data
   useEffect(() => {
@@ -48,13 +73,36 @@ export function Sidebar() {
     return () => { unlisten.then(fn => fn()); };
   }, []);
 
+  // Listen for folder chat IDs response
+  useEffect(() => {
+    const unlisten = listen<any>('td:folder_chats', ({ payload }) => {
+      const folderId = payload['@extra']?.folder_id;
+      if (folderId != null) {
+        const ids: number[] = payload.chat_ids ?? [];
+        setFolderChatIds(prev => ({ ...prev, [folderId]: ids }));
+      }
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, []);
+
+  // When a folder tab is selected, fetch its chat list if not cached
+  function handleFolderSelect(id: number | null) {
+    setActiveFolderId(id);
+    if (id !== null && !folderChatIds[id]) {
+      tdlib.getFolderChats(id);
+    }
+  }
+
   const filtered = (() => {
     let chats = state.chats;
     if (query) {
       chats = chats.filter(c => c.title.toLowerCase().includes(query.toLowerCase()));
     }
-    // Folder filtering is done on the backend side in a real client,
-    // here we just show all (folder API requires extra TDLib calls per folder)
+    // Apply folder filter if a folder is selected and its IDs are cached
+    if (activeFolderId !== null && folderChatIds[activeFolderId]) {
+      const ids = new Set(folderChatIds[activeFolderId]);
+      chats = chats.filter(c => ids.has(c.id));
+    }
     return chats;
   })();
 
@@ -128,7 +176,7 @@ export function Sidebar() {
           <FolderTabs
             folders={folders}
             activeId={activeFolderId}
-            onSelect={setActiveFolderId}
+            onSelect={handleFolderSelect}
           />
         )}
 

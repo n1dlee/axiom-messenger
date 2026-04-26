@@ -68,6 +68,9 @@ export function useTdlib() {
   const getChatFolders = useCallback(() =>
     invoke('get_chat_folders'), []);
 
+  const getFolderChats = useCallback((folderId: number, limit = 200) =>
+    invoke('get_chats_in_folder', { folderId, limit }), []);
+
   const leaveChat = useCallback((chatId: number) =>
     invoke('leave_chat', { chatId }), []);
 
@@ -290,6 +293,12 @@ export function useTdlib() {
   const getNotificationSettings = useCallback((scope: string) =>
     invoke('get_scope_notification_settings', { scope }), []);
 
+  const setNotificationSettings = useCallback(
+    (scope: string, muteFor = 0, showPreview = true) =>
+      invoke('set_scope_notification_settings', { scope, muteFor, showPreview }),
+    []
+  );
+
   const getActiveSessions = useCallback(() =>
     invoke('get_active_sessions'), []);
 
@@ -315,7 +324,7 @@ export function useTdlib() {
     archiveChat, unarchiveChat, toggleChatPin,
     muteChat, unmuteChat,
     createPrivateChat, createNewGroup, createNewSupergroup,
-    getChatFolders, leaveChat, deleteChat,
+    getChatFolders, getFolderChats, leaveChat, deleteChat,
     // Messages
     getHistory, sendMessage, editMessage, deleteMessages,
     forwardMessages, sendChatAction, viewMessages,
@@ -336,7 +345,7 @@ export function useTdlib() {
     // Settings
     toggleGhostMode, getDeletedMessages,
     setName, setBio, setUsername,
-    getPrivacyRules, setPrivacyRules, getNotificationSettings,
+    getPrivacyRules, setPrivacyRules, getNotificationSettings, setNotificationSettings,
     getActiveSessions, terminateSession, terminateAllOtherSessions,
     getAccountTtl, setAccountTtl, deleteAccount,
   };

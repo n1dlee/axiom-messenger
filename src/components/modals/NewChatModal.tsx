@@ -17,9 +17,9 @@ interface ContactResult {
   phone?: string;
 }
 
-export function NewChatModal({ onClose, onOpenChat }: Props) {
+export function NewChatModal({ onClose, onOpenChat: _onOpenChat }: Props) {
   const tdlib = useTdlib();
-  const { dispatch } = useApp();
+  const { dispatch: _dispatch } = useApp();
   const [query, setQuery] = useState('');
   const [contacts, setContacts] = useState<ContactResult[]>([]);
   const [loading, setLoading] = useState(false);

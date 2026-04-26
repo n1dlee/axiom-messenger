@@ -94,3 +94,8 @@
 .badge.muted {
   background: var(--text-muted);
 }
+
+.draftLabel {
+  color: #4CAF50;
+  font-weight: var(--fw-medium);
+}

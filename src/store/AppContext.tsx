@@ -106,6 +106,32 @@ function reducer(state: AppState, action: AppAction): AppState {
       };
     }
 
+    case 'UPDATE_MESSAGE_FILE': {
+      // Update localPath on every message (across all chats) that references this fileId
+      const updatedMessages: typeof state.messages = {};
+      for (const [chatIdStr, msgs] of Object.entries(state.messages)) {
+        updatedMessages[Number(chatIdStr)] = msgs.map(m =>
+          m.fileId === action.fileId
+            ? { ...m, localPath: action.localPath, isDownloading: false }
+            : m
+        );
+      }
+      return { ...state, messages: updatedMessages };
+    }
+
+    case 'UPDATE_MESSAGE_REACTIONS': {
+      const existing = state.messages[action.chatId] ?? [];
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [action.chatId]: existing.map(m =>
+            m.id === action.messageId ? { ...m, reactions: action.reactions } : m
+          ),
+        },
+      };
+    }
+
     case 'SET_MESSAGES_LOADING':
       return { ...state, messagesLoading: action.loading };
 

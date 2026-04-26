@@ -19,6 +19,8 @@ function formatDate(ts?: number): string {
 }
 
 export function ChatListItem({ chat, isActive, onClick }: Props) {
+  const draft = localStorage.getItem(`draft_${chat.id}`);
+
   return (
     <button
       className={[styles.item, isActive ? styles.active : ''].join(' ')}
@@ -39,7 +41,14 @@ export function ChatListItem({ chat, isActive, onClick }: Props) {
           <span className={styles.time}>{formatDate(chat.lastMessageDate)}</span>
         </div>
         <div className={styles.row}>
-          <span className={styles.preview}>{chat.lastMessage || ' '}</span>
+          {draft ? (
+            <span className={styles.preview}>
+              <span className={styles.draftLabel}>Черновик: </span>
+              {draft.slice(0, 40)}
+            </span>
+          ) : (
+            <span className={styles.preview}>{chat.lastMessage || ' '}</span>
+          )}
           {chat.unreadCount > 0 && (
             <span className={[styles.badge, chat.isMuted ? styles.muted : ''].join(' ')}>
               {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
